@@ -10,17 +10,34 @@ class ElementWrapper {
             let eventName = RegExp.$1.replace(/^[\s\S]/, s => s.toLowerCase())
             this.root.addEventListener(eventName, value)
         }
-        this.root.setAttribute(name, value)
+
+        if (name === "className") {
+            this.root.setAttribute("class", value)
+        } else {
+            this.root.setAttribute(name, value)            
+        }        
     }
 
     appendChild(component) {
-       this.root.appendChild(component.root)
+        let range = document.createRange()
+        range.setStart(this.root,0)
+        range.setEnd(this.root,this.root.childNodes.length)        
+        component[RENDER_TO_DOM](range)       
     }    
+
+    [RENDER_TO_DOM](range) {
+        range.deleteContents()
+        range.insertNode(this.root)
+    }
 }
 
 class TextWrapper {
     constructor(content) {
         this.root = document.createTextNode(content)        
+    }
+    [RENDER_TO_DOM](range) {
+        range.deleteContents()
+        range.insertNode(this.root)
     }
 }
 
@@ -31,6 +48,7 @@ export class Component {
         this.props = Object.create(null)
         this._root = null
         this.state = null
+        this._range = null
     }
 
     setAttribute(name, value) {
@@ -45,19 +63,42 @@ export class Component {
         this.children.push(component)
     }
 
-    get root() {
-        if (!this._root) {
-            this._root = this.render().root
-        } 
-        return this._root
-    }
-
     [RENDER_TO_DOM](range) {
+        this._range = range;
         this.render()[RENDER_TO_DOM](range)
     }
 
-    setState(state) {
+    rerender() {
+        let oldRange = this._range;
+        
+        let range = document.createRange();
+        range.setStart(this._range.startContainer, this._range.startOffset)
+        range.setEnd(this._range.startContainer, this._range.startOffset)
+        this[RENDER_TO_DOM](range)
 
+        oldRange.setStart(range.endContainer, range.endOffset)
+        this.range.deleteContents();        
+    }
+
+    setState(newState) {
+        if (this.state === null || typeof this.state !== "object") {
+            this.state = newState
+            this.rerender()
+            return
+        }
+        let merge = function (oldState, newState) {
+            for (const p in newState) {
+                if (newState.hasOwnProperty(p)) {
+                    if (oldState[p] === null || typeof oldState !== "object") {
+                        oldState[p] = newState[p]
+                    } else {
+                        merge(oldState[p], newState[p])
+                    }                    
+                }
+            }
+        } 
+        merge(this.state, newState)
+        this.rerender()
     }
 }
 
@@ -98,7 +139,10 @@ export let ToyReact = {
         insertChildren(children)
         return element
     },
-    render(component, root) {
-        root.appendChild(component.root)
+    render(component, parentElement) {
+        let range = document.createRange()
+        range.setStart(parentElement,0)
+        range.setEnd(parentElement,parentElement.childNodes.length)        
+        component[RENDER_TO_DOM](range)
     }
 }
