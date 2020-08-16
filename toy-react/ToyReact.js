@@ -1,3 +1,4 @@
+const RENDER_TO_DOM = Symbol("render to dom")
 
 class ElementWrapper {
     constructor(type) {
@@ -12,22 +13,14 @@ class ElementWrapper {
         this.root.setAttribute(name, value)
     }
 
-    appendChild(vchild) {
-        vchild.mountTo(this.root)
-    }
-
-    mountTo(parent) {
-        parent.appendChild(this.root)
-    }
+    appendChild(component) {
+       this.root.appendChild(component.root)
+    }    
 }
 
 class TextWrapper {
     constructor(content) {
         this.root = document.createTextNode(content)        
-    }
-
-    mountTo(parent) {
-        parent.appendChild(this.root)
     }
 }
 
@@ -36,6 +29,8 @@ export class Component {
     constructor() {
         this.children = []
         this.props = Object.create(null)
+        this._root = null
+        this.state = null
     }
 
     setAttribute(name, value) {
@@ -46,13 +41,23 @@ export class Component {
         this[name] = value
     }
 
-    mountTo(parent) {
-        let vdom = this.render()
-        vdom.mountTo(parent)
+    appendChild(component) {
+        this.children.push(component)
     }
 
-    appendChild(vchild) {
-        this.children.push(vchild)
+    get root() {
+        if (!this._root) {
+            this._root = this.render().root
+        } 
+        return this._root
+    }
+
+    [RENDER_TO_DOM](range) {
+        this.render()[RENDER_TO_DOM](range)
+    }
+
+    setState(state) {
+
     }
 }
 
@@ -72,7 +77,7 @@ export let ToyReact = {
 
        let insertChildren = (children) => {
             for (const child of children) {
-
+                
                 if (typeof child === 'object' && child instanceof Array) {
                     insertChildren(child)
                 } else {
@@ -93,7 +98,7 @@ export let ToyReact = {
         insertChildren(children)
         return element
     },
-    render(vdom, element) {
-        vdom.mountTo(element)
+    render(component, root) {
+        root.appendChild(component.root)
     }
 }

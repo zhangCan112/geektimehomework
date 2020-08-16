@@ -40,9 +40,29 @@ class Board extends Component {
 
 
 
-let a = <Board></Board>
+// let a = <Board></Board>
+
+
+class MyComponent extends Component {
+    
+    constructor() {
+        super()
+        this.state = {a:1, b:2}
+    }
+
+    render() {
+        return <div onClick ={()=> {this.setState({a: this.state.a + 1})}}>
+            {this.children}
+            <div>{this.state.a}</div>
+            <div>{this.state.b}</div>            
+        </div>
+    }
+}
+
+
+
 
 ToyReact.render(
-    a,
+    <MyComponent>MyComponent</MyComponent>,
     document.body
 )
