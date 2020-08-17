@@ -20,7 +20,7 @@ class ElementWrapper {
 
     appendChild(component) {
         let range = document.createRange()
-        range.setStart(this.root,0)
+        range.setStart(this.root,this.root.childNodes.length)
         range.setEnd(this.root,this.root.childNodes.length)        
         component[RENDER_TO_DOM](range)       
     }    
@@ -70,14 +70,14 @@ export class Component {
 
     rerender() {
         let oldRange = this._range;
-        
+
         let range = document.createRange();
-        range.setStart(this._range.startContainer, this._range.startOffset)
-        range.setEnd(this._range.startContainer, this._range.startOffset)
+        range.setStart(oldRange.startContainer, oldRange.startOffset)
+        range.setEnd(oldRange.startContainer, oldRange.startOffset)
         this[RENDER_TO_DOM](range)
 
         oldRange.setStart(range.endContainer, range.endOffset)
-        this.range.deleteContents();        
+        oldRange.deleteContents();        
     }
 
     setState(newState) {
@@ -89,7 +89,7 @@ export class Component {
         let merge = function (oldState, newState) {
             for (const p in newState) {
                 if (newState.hasOwnProperty(p)) {
-                    if (oldState[p] === null || typeof oldState !== "object") {
+                    if (oldState[p] === null || typeof oldState[p] !== "object") {
                         oldState[p] = newState[p]
                     } else {
                         merge(oldState[p], newState[p])
